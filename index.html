@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="300">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beer Menu Overlay</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: black;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    video#bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      color: white;
+      padding: 40px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+      font-size: 1.8em;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .header {
+      font-weight: bold;
+      border-bottom: 2px solid white;
+      margin-bottom: 20px;
+    }
+    .col {
+      flex: 1;
+      text-align: left;
+    }
+    .col.center {
+      text-align: center;
+    }
+    .col.right {
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <video id="bg" autoplay muted loop>
+    <source src="beer.mp4" type="video/mp4">
+  </video>
+
+  <div class="container">
+    <div class="row header">
+      <div class="col">ABV</div>
+      <div class="col center">Draft</div>
+      <div class="col right">16oz</div>
+      <div class="col right">21oz</div>
+      <div class="col right">32oz</div>
+    </div>
+    <div id="menu"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script>
+    function renderMenu(data) {
+      const menu = document.getElementById('menu');
+      menu.innerHTML = '';
+      data.forEach(row => {
+        if (row.length >= 5 && row[0] && row[1]) {
+          const div = document.createElement('div');
+          div.className = 'row';
+          div.innerHTML = `
+            <div class="col">${row[0]}</div>
+            <div class="col center">${row[1]}</div>
+            <div class="col right">${row[2]}</div>
+            <div class="col right">${row[3]}</div>
+            <div class="col right">${row[4]}</div>
+          `;
+          menu.appendChild(div);
+        }
+      });
+    }
+
+    function loadData() {
+      const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQdMMKgG2rSuXVCjO60yQWRzDoaUdWzXbtrwOkFcLnoji-oK574c0G90koWOJ0lXMmnYZs4aANmfN0q/pub?gid=1531130906&single=true&output=csv';
+
+      Papa.parse(csvUrl, {
+        download: true,
+        complete: function(results) {
+          const data = results.data.slice(1, 11); // Skip header, show 10 items
+          localStorage.setItem('menuData', JSON.stringify(data));
+          renderMenu(data);
+        },
+        error: function() {
+          const cached = localStorage.getItem('menuData');
+          if (cached) {
+            const data = JSON.parse(cached);
+            renderMenu(data);
+          } else {
+            document.getElementById('menu').innerHTML = '<div class="row">Unable to load menu.</div>';
+          }
+        }
+      });
+    }
+
+    loadData();
+    setInterval(loadData, 300000); // refresh every 5 minutes
+  </script>
+</body>
+</html>
